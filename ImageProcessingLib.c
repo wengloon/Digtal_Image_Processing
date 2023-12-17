@@ -85,8 +85,7 @@ FILE *fOut;
 int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
 char *dot;
 char greyName[] = "_Grey.bmp";
-char newName[sizeof(imgName) + sizeof(greyName)];
-
+char newName[strlen(imgName) + strlen(greyName)];
 
 	ret = true;
     dot = strchr(imgName, '.');
@@ -166,7 +165,7 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
     }
     else
     {
-        ret = BMP_IMAGE_TYPE_GREY_SCALE;
+        ret = BMP_IMAGE_TYPE_GREY_RGB;
         for(int i =0;i<BMP_HEADER_SIZE;i++)
         {
             imgHeader[i] = getc(fIn);
@@ -175,34 +174,85 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
         imageHeight = *(int*)&imgHeader[BMP_HEADER_HEIGHT_DATA_OFFSET];
         imageWidth  = *(int*)&imgHeader[BMP_HEADER_WIDTH_DATA_OFFSET];
         imageBitDepth = *(int*)&imgHeader[BMP_HEADER_BITDEPTH_DATA_OFFSET];
+		
+		ret = (imageBitDepth <= BMP_BIT_DEPTH_8) ? BMP_IMAGE_TYPE_GREY : BMP_IMAGE_TYPE_RGB;
+		if(ret == BMP_IMAGE_TYPE_GREY )
+		{
+			printf("it is a greyscale");
+		}
+		else if(ret == BMP_IMAGE_TYPE_RGB )
+		{
+			printf("it is a RGB");
+		}
+		else
+		{	/* should not reach here */
+			printf("image error");
+		}
+    }
+	fclose(fIn);
+    return ret;
+}
+
+int ImageBinarization(const char *imgName, int threshold)
+{
+unsigned char imgHeader[BMP_HEADER_SIZE];
+unsigned char colorTable[BMP_COLOR_TABLE_SIZE];
+FILE *fIn;
+FILE *fOut;
+int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
+char *dot;
+char BlackWhiteName[] = "_Bw.bmp";
+char newName[strlen(imgName) + strlen(BlackWhiteName)];
+
+	ret = true;
+    dot = strchr(imgName, '.');
+    index = (int)(dot - imgName);
+    strcpy(newName, imgName);
+    for(int i=0; i< sizeof(BlackWhiteName); i++)
+    {
+        newName[index + i] = BlackWhiteName[i];
+    }
+    printf("Holla %s", newName);
+
+    fIn = fopen(imgName,"rb");
+
+    if(fIn == NULL)
+    {
+        printf("Unable to open image\n");
+        ret = false;
+    }
+    else
+    {
+        fOut = fopen(newName,"wb");
+        for(int i =0;i<BMP_HEADER_SIZE;i++)
+        {
+           imgHeader[i] = getc(fIn);
+        }
+        fwrite(imgHeader,sizeof(unsigned char),BMP_HEADER_SIZE,fOut);
+
+        imageHeight = *(int*)&imgHeader[BMP_HEADER_HEIGHT_DATA_OFFSET];
+        imageWidth  = *(int*)&imgHeader[BMP_HEADER_WIDTH_DATA_OFFSET];
+        imageBitDepth = *(int*)&imgHeader[BMP_HEADER_BITDEPTH_DATA_OFFSET];
 
         if(imageBitDepth <= BMP_BIT_DEPTH_8)
         {   /* below or equal to 8bit depth, means this image contain color table */
             fread(colorTable,sizeof(unsigned char),BMP_COLOR_TABLE_SIZE,fIn);
+            fwrite(colorTable,sizeof(unsigned char),BMP_COLOR_TABLE_SIZE,fOut);
         }
 
         int imageSize = imageHeight * imageWidth;
-        unsigned char buffer[imageSize][BMP_RGB_CHANNEL_NUM];
+        unsigned char buffer[imageSize];
+        fread(buffer,sizeof(unsigned char),imageSize,fIn);
 
         for(int i =0;i<imageSize;i++)
         {
-            temp = 0;
-            for(int j = 0; j < BMP_RGB_CHANNEL_NUM; j++)
-            {   /* get RGB channel value */
-                buffer[i][j] = getc(fIn);
-                printf("channel %d\n", buffer[i][j]);
-            }
-            printf("\n");
-            if( ( buffer[i][BMP_RGB_CHANNEL_RED] != buffer[i][BMP_RGB_CHANNEL_GREEN] ) ||
-                ( buffer[i][BMP_RGB_CHANNEL_RED] != buffer[i][BMP_RGB_CHANNEL_BLUE] ) ||
-                ( buffer[i][BMP_RGB_CHANNEL_BLUE] != buffer[i][BMP_RGB_CHANNEL_GREEN] ))
-            {
-                /* 3 channel not same, not grey scale */
-                ret = BMP_IMAGE_TYPE_RGB;
-                printf("is it a RGB bmp image\n");
-                break;
-            }
+            buffer[i] = (buffer[i]>threshold)? WHITE : BLACK;
         }
+        fwrite(buffer,sizeof(unsigned char), imageSize,fOut);
+        fclose(fIn);
+        fclose(fOut);
+        printf("Bmp binarization Success!\n");
     }
-    return ret;
+
+	return ret;
 }
