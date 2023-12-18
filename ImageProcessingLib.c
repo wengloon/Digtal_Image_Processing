@@ -165,7 +165,7 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
     }
     else
     {
-        ret = BMP_IMAGE_TYPE_GREY_RGB;
+        ret = BMP_IMAGE_TYPE_GREY_SCALE;
         for(int i =0;i<BMP_HEADER_SIZE;i++)
         {
             imgHeader[i] = getc(fIn);
@@ -175,19 +175,49 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
         imageWidth  = *(int*)&imgHeader[BMP_HEADER_WIDTH_DATA_OFFSET];
         imageBitDepth = *(int*)&imgHeader[BMP_HEADER_BITDEPTH_DATA_OFFSET];
 		
-		ret = (imageBitDepth <= BMP_BIT_DEPTH_8) ? BMP_IMAGE_TYPE_GREY : BMP_IMAGE_TYPE_RGB;
-		if(ret == BMP_IMAGE_TYPE_GREY )
-		{
-			printf("it is a greyscale");
-		}
-		else if(ret == BMP_IMAGE_TYPE_RGB )
-		{
-			printf("it is a RGB");
-		}
-		else
-		{	/* should not reach here */
-			printf("image error");
-		}
+        int imageSize = imageHeight * imageWidth;
+        unsigned char buffer[imageSize][BMP_RGB_CHANNEL_NUM];
+        switch (imageBitDepth)
+        {
+            case BMP_BIT_DEPTH_1:
+                ret = BMP_IMAGE_TYPE_BINARY;
+                printf("it is a binary image");
+                break;
+            case BMP_BIT_DEPTH_8:
+                ret = BMP_IMAGE_TYPE_GREY_SCALE;
+                printf("it is a standard greyscale image");
+                break;
+            case BMP_BIT_DEPTH_16:
+            case BMP_BIT_DEPTH_24:
+            case BMP_BIT_DEPTH_32:
+                ret = BMP_IMAGE_TYPE_GREY_SCALE;
+                printf("it might not a standard greyscale image");
+                for(int i =0;i<imageSize;i++)
+                {
+                    temp = 0;
+                    for(int j = 0; j < BMP_RGB_CHANNEL_NUM; j++)
+                    {   /* get RGB channel value */
+                        buffer[i][j] = getc(fIn);
+                        //printf("channel %d\n", buffer[i][j]);
+                    }
+                    //printf("\n");
+                    if( ( buffer[i][BMP_RGB_CHANNEL_RED] != buffer[i][BMP_RGB_CHANNEL_GREEN] ) ||
+                        ( buffer[i][BMP_RGB_CHANNEL_RED] != buffer[i][BMP_RGB_CHANNEL_BLUE] ) ||
+                        ( buffer[i][BMP_RGB_CHANNEL_BLUE] != buffer[i][BMP_RGB_CHANNEL_GREEN] ))
+                    {
+                        /* 3 channel not same, not grey scale */
+                        ret = BMP_IMAGE_TYPE_RGB;
+                        printf("is it a RGB bmp image\n");
+                        break;
+                    }
+                }
+                break;
+            default:
+                /* should not reach here */
+                printf("image error");
+                break;
+        }
+
     }
 	fclose(fIn);
     return ret;

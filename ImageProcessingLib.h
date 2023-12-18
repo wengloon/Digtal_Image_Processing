@@ -16,7 +16,7 @@
 #define DIB_HEADER_SIZE_OFFSET                          0x0E    /* the size of this header, in bytes (40) */
 #define DIB_HEADER_WIDTH_DATA_OFFSET                    0x12    /* the bitmap width in pixels (signed integer) */
 #define DIB_HEADER_HEIGHT_DATA_OFFSET                   0x16    /* the bitmap height in pixels (signed integer) */
-#define DIB_HEADER_COLOR_PLANE_NUM_OFFSET               0x1A    /* the bitmap height in pixels (signed integer) */
+#define DIB_HEADER_COLOR_PLANE_NUM_OFFSET               0x1A    /* the number of color planes (must be 1) */
 #define DIB_HEADER_BITDEPTH_DATA_OFFSET                 0x1C    /* the number of bits per pixel, which is the color depth of the image. Typical values are 1, 4, 8, 16, 24 and 32 */
 #define DIB_HEADER_COMPRESS_METHOD_OFFSET               0x1E    /* the compression method being used. See the next table for a list of possible values */
 #define DIB_HEADER_IMAGE_SIZE_OFFSET			        0x22	/*	the image size. This is the size of the raw bitmap data; a dummy 0 can be given for BI_RGB bitmaps.	*/
@@ -74,6 +74,7 @@ struct DIB_header{
 #define BMP_IMAGE_TYPE_ERROR          0
 #define BMP_IMAGE_TYPE_RGB            1
 #define BMP_IMAGE_TYPE_GREY_SCALE     2
+#define BMP_IMAGE_TYPE_BINARY         3
 
 #define BMP_HEADER_SIZE         54
 #define BMP_COLOR_TABLE_SIZE    1024
