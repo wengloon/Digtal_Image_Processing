@@ -44,7 +44,7 @@
 typedef struct BMP_header{
     char   name[2];
     unsigned int size;      //	The size of the BMP file in bytes
-    unsigned int offset;    //The offset, i.e. starting address, of the byte where the bitmap image data (pixel array) can be found.
+    unsigned int offset;    // The offset, i.e. starting address, of the byte where the bitmap image data (pixel array) can be found.
 };
 
 struct DIB_header{
@@ -71,10 +71,12 @@ struct DIB_header{
 #define BMP_HEADER_BITDEPTH_DATA_OFFSET         0x1C    /* the bitmap bit depth data offset */
 #define BMP_HEADER_BITDEPTH_DATA_SIZE           0x02    /* the bitmap bit depth data size */
 
-#define BMP_IMAGE_TYPE_ERROR          0
-#define BMP_IMAGE_TYPE_RGB            1
-#define BMP_IMAGE_TYPE_GREY_SCALE     2
-#define BMP_IMAGE_TYPE_BINARY         3
+#define BMP_IMAGE_TYPE_ERROR                   0
+#define BMP_IMAGE_TYPE_RGB                     1
+#define BMP_IMAGE_TYPE_STANDARD_GREY_SCALE     2
+#define BMP_IMAGE_TYPE_NOT_STANDARD_GREY_SCALE 3
+#define BMP_IMAGE_TYPE_STANDARD_BINARY         4
+#define BMP_IMAGE_TYPE_NOT_STANDARD_BINARY     5
 
 #define BMP_HEADER_SIZE         54
 #define BMP_COLOR_TABLE_SIZE    1024
@@ -93,8 +95,8 @@ struct DIB_header{
 #define BMP_RGB_CHANNEL_BLUE    2
 #define BMP_RGB_CHANNEL_NUM     3
 
-#define WHITE   255
-#define BLACK   0
+#define BMP_COLOR_WHITE   255
+#define BMP_COLOR_BLACK   0
 
 
 extern int  imageReader(const char *imgName, int *_height, int *_width, int *_bitDepth, unsigned char *_header, unsigned char *_colorTable, unsigned char *_buf);

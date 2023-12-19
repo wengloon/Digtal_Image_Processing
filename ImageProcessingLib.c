@@ -32,8 +32,8 @@ int ret, imageSize;
         *_height = *(int *)&_header[BMP_HEADER_HEIGHT_DATA_OFFSET];
         *_bitDepth = *(int *)&_header[BMP_HEADER_BITDEPTH_DATA_OFFSET];
         imageSize  = (*_width)*(*_height);
-        printf(" image height %d\n", *_height);
-        printf(" image width %d\n", *_width);
+//        printf(" image height %d\n", *_height);
+//        printf(" image width %d\n", *_width);
 
         if(*_bitDepth <= BMP_BIT_DEPTH_8)
         { /* below or equal to 8bit depth, means this image contain color table */
@@ -155,6 +155,7 @@ unsigned char imgHeader[BMP_HEADER_SIZE];
 unsigned char colorTable[BMP_COLOR_TABLE_SIZE];
 FILE *fIn;
 int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
+int PixelArrayOffset;
 
     fIn = fopen(imgName,"rb");
 
@@ -165,33 +166,52 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
     }
     else
     {
-        ret = BMP_IMAGE_TYPE_GREY_SCALE;
+        ret = BMP_IMAGE_TYPE_ERROR;
         for(int i =0;i<BMP_HEADER_SIZE;i++)
         {
             imgHeader[i] = getc(fIn);
         }
-
+        
+		PixelArrayOffset = *(int*)&imgHeader[BMP_HEADER_IMAGE_DATA_START_ADDR_OFFSET];
         imageHeight = *(int*)&imgHeader[BMP_HEADER_HEIGHT_DATA_OFFSET];
         imageWidth  = *(int*)&imgHeader[BMP_HEADER_WIDTH_DATA_OFFSET];
         imageBitDepth = *(int*)&imgHeader[BMP_HEADER_BITDEPTH_DATA_OFFSET];
-		
+
         int imageSize = imageHeight * imageWidth;
         unsigned char buffer[imageSize][BMP_RGB_CHANNEL_NUM];
+        unsigned char buffer1channel[imageSize];
+
         switch (imageBitDepth)
         {
             case BMP_BIT_DEPTH_1:
-                ret = BMP_IMAGE_TYPE_BINARY;
-                printf("it is a binary image");
+                ret = BMP_IMAGE_TYPE_STANDARD_BINARY;
                 break;
             case BMP_BIT_DEPTH_8:
-                ret = BMP_IMAGE_TYPE_GREY_SCALE;
-                printf("it is a standard greyscale image");
+                ret = BMP_IMAGE_TYPE_NOT_STANDARD_BINARY;
+                for(int i =0;i<( PixelArrayOffset-BMP_HEADER_SIZE) ;i++)
+                {   /*data dump*/
+                     temp = getc(fIn);
+                }
+                for(int j=0; j< imageSize; j++)
+                {
+                    buffer1channel[j] = getc(fIn);
+                    temp = buffer1channel[j];
+                    if(((buffer1channel[j]) != BMP_COLOR_BLACK ) && 
+                        ((buffer1channel[j]) != BMP_COLOR_WHITE ))
+                    {
+                        ret = BMP_IMAGE_TYPE_STANDARD_GREY_SCALE;
+                        break;
+                    }
+                }
                 break;
             case BMP_BIT_DEPTH_16:
             case BMP_BIT_DEPTH_24:
             case BMP_BIT_DEPTH_32:
-                ret = BMP_IMAGE_TYPE_GREY_SCALE;
-                printf("it might not a standard greyscale image");
+                ret = BMP_IMAGE_TYPE_NOT_STANDARD_GREY_SCALE;
+                for(int i =0;i<( PixelArrayOffset-BMP_HEADER_SIZE) ;i++)
+                {   /*data dump*/
+                     temp = getc(fIn);
+                }
                 for(int i =0;i<imageSize;i++)
                 {
                     temp = 0;
@@ -207,15 +227,38 @@ int ret, imageSize, imageHeight, imageWidth, imageBitDepth, index, temp, len;
                     {
                         /* 3 channel not same, not grey scale */
                         ret = BMP_IMAGE_TYPE_RGB;
-                        printf("is it a RGB bmp image\n");
                         break;
                     }
                 }
                 break;
             default:
                 /* should not reach here */
-                printf("image error");
+                printf("image error\n");
                 break;
+        }
+        switch (ret)
+        {
+            case BMP_IMAGE_TYPE_ERROR:
+                printf("image error\n");
+                break;
+            case BMP_IMAGE_TYPE_RGB:
+                printf("is it a RGB bmp image\n");
+                break;
+            case BMP_IMAGE_TYPE_STANDARD_GREY_SCALE:
+                printf("it is a standard greyscale image\n");
+                break;
+            case BMP_IMAGE_TYPE_NOT_STANDARD_GREY_SCALE:
+                printf("it is not a standard greyscale image\n");
+                break;
+            case BMP_IMAGE_TYPE_STANDARD_BINARY:
+                printf("it is a standard binary image\n");
+                break;
+            case BMP_IMAGE_TYPE_NOT_STANDARD_BINARY:
+                printf("it is not a standard binary image\n");
+                break;
+        
+        default:
+            break;
         }
 
     }
@@ -242,7 +285,7 @@ char newName[strlen(imgName) + strlen(BlackWhiteName)];
     {
         newName[index + i] = BlackWhiteName[i];
     }
-    printf("Holla %s", newName);
+//    printf("Holla %s", newName);
 
     fIn = fopen(imgName,"rb");
 
@@ -276,7 +319,7 @@ char newName[strlen(imgName) + strlen(BlackWhiteName)];
 
         for(int i =0;i<imageSize;i++)
         {
-            buffer[i] = (buffer[i]>threshold)? WHITE : BLACK;
+            buffer[i] = (buffer[i]>threshold)? BMP_COLOR_WHITE : BMP_COLOR_BLACK;
         }
         fwrite(buffer,sizeof(unsigned char), imageSize,fOut);
         fclose(fIn);
